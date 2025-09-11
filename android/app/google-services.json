@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "576716495489",
+    "project_id": "fusionfiesta-91509",
+    "storage_bucket": "fusionfiesta-91509.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:576716495489:android:f93bc7dd10f2ff320c0b80",
+        "android_client_info": {
+          "package_name": "com.example.fusionfiesta"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDdJCRX1TG7y1m_2zZPUTBfyCvyF4rQuk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
