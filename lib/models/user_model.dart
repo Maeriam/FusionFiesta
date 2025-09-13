@@ -1,21 +1,37 @@
-class UserModel {
+class User {
   final String id;
   final String name;
   final String email;
   final String role;
+  final bool approved;
+  final String? enrolmentNumber;
+  final String? department;
+  final String? collegeIdProof;
+  final List<String> bookmarks; // ✅ added field
 
-  UserModel({required this.id, required this.name, required this.email, required this.role});
+  User({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.role,
+    required this.approved,
+    this.enrolmentNumber,
+    this.department,
+    this.collegeIdProof,
+    this.bookmarks = const [], // ✅ default empty list
+  });
 
-  factory UserModel.fromJson(String id, Map<String, dynamic> json) {
-    return UserModel(
-      id: id,
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['_id'] ?? '',
       name: json['name'] ?? '',
       email: json['email'] ?? '',
-      role: json['role'] ?? 'student',
+      role: json['role'] ?? '',
+      approved: json['approved'] ?? false,
+      enrolmentNumber: json['enrolmentNumber'],
+      department: json['department'],
+      collegeIdProof: json['collegeIdProof'],
+      bookmarks: List<String>.from(json['bookmarks'] ?? []), // ✅ parse safely
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {'name': name, 'email': email, 'role': role};
   }
 }
