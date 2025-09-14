@@ -62,25 +62,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
         String role = responseData['user']['role'];
         if (role == 'student') {
-          Navigator.pushReplacementNamed(
-            context,
-            Routes.studentDashboard,
-            arguments: {
-              'token': responseData['token'] ?? '',
-              'userId': responseData['user']['_id'] ?? '', // matches mongoose _id
-              'name': responseData['user']['name'] ?? 'Unknown',
-              'email': responseData['user']['email'] ?? '',
-              'role': responseData['user']['role'] ?? 'student',
-              'onLogout': () {
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  Routes.login,
-                      (route) => false,
-                );
-              },
-            },
-          );
-        } else if (role == 'organizer') {
+          Navigator.pushReplacementNamed(context, Routes.studentDashboard);
+
+      } else if (role == 'organizer') {
           Navigator.pushReplacementNamed(context, Routes.organizerDashboard);
         } else if (role == 'admin') {
           Navigator.pushReplacementNamed(context, Routes.adminDashboard);

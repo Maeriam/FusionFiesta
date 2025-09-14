@@ -1,80 +1,65 @@
+import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/event_service.dart';
+import 'pdf_viewer_screen.dart';
 
 class EventRegistrationScreen extends StatefulWidget {
   final Map<String, dynamic> event;
   const EventRegistrationScreen({super.key, required this.event});
 
   @override
-  _EventRegistrationScreenState createState() =>
-      _EventRegistrationScreenState();
+  _EventRegistrationScreenState createState() => _EventRegistrationScreenState();
 }
 
 class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
   bool isLoading = true;
   bool isRegistering = false;
   Map<String, dynamic>? certificate;
+  String? userId;
+  String? userRole;
 
   @override
   void initState() {
     super.initState();
-    checkRegistration();
+    initScreen();
   }
 
-  // Check if user is already registered and fetch certificate
-  Future<void> checkRegistration() async {
+  Future<void> initScreen() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    final userId = prefs.getString('userId');
+    userId = prefs.getString('userId');
+    userRole = prefs.getString('role');
 
-    if (token == null || userId == null) {
-      setState(() => isLoading = false);
-      return;
-    }
-
-    // Check if user is already registered
-    final registeredUsers = widget.event['registeredUsers'] as List;
-    if (registeredUsers.contains(userId)) {
-      // Fetch certificate
-      final certificates = await EventService.getCertificates(token);
-      final cert = certificates.firstWhere(
+    if (token != null && userId != null) {
+      final registeredUsers = widget.event['registeredUsers'] as List<dynamic>;
+      if (registeredUsers.contains(userId)) {
+        final certificates = await EventService.getCertificates(token);
+        certificate = certificates.firstWhere(
               (c) => c['event']['_id'] == widget.event['_id'],
-          orElse: () => null);
-
-      setState(() {
-        certificate = cert;
-        isLoading = false;
-      });
-    } else {
-      setState(() => isLoading = false);
+          orElse: () => null,
+        );
+      }
     }
-  }
 
-  String generateRandomQRCode() {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    final rnd = Random();
-    return String.fromCharCodes(
-      Iterable.generate(8, (_) => chars.codeUnitAt(rnd.nextInt(chars.length))),
-    );
+    setState(() => isLoading = false);
   }
 
   Future<void> register() async {
+    if (userRole != "participant") {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("You must upgrade to Participant to register.")),
+      );
+      return;
+    }
+
     setState(() => isRegistering = true);
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
-    if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("You must be logged in to register.")),
-      );
-      setState(() => isRegistering = false);
-      return;
-    }
-
     try {
-      final response = await EventService.registerForEvent(widget.event['_id'], token);
+      final response = await EventService.registerForEvent(widget.event['_id'], token!);
 
       setState(() {
         certificate = response['certificate'];
@@ -105,29 +90,32 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
             ? Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.workspace_premium,
-                size: 64, color: Colors.deepPurple),
+            const Icon(Icons.workspace_premium, size: 64, color: Colors.deepPurple),
             const SizedBox(height: 16),
             Text(
-              "Registered!\nQR: ${certificate!['qrCode']}",
+              "Registered!\nQR: ${certificate!['qrCode'] ?? 'N/A'}",
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 18),
             ),
             const SizedBox(height: 8),
-            Text(
-              "Certificate file: ${certificate!['fileUrl']}",
-              style: const TextStyle(color: Colors.grey),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PDFViewerScreen(fileUrl: certificate!['fileUrl']),
+                  ),
+                );
+              },
+              child: const Text("Preview Certificate"),
             ),
           ],
         )
             : ElevatedButton(
           onPressed: isRegistering ? null : register,
-          style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.deepPurple),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple),
           child: isRegistering
-              ? const CircularProgressIndicator(
-            color: Colors.white,
-          )
+              ? const CircularProgressIndicator(color: Colors.white)
               : const Text("Confirm Registration"),
         ),
       ),

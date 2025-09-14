@@ -3,8 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class FeedbackScreen extends StatefulWidget {
-  final String eventId;
-  const FeedbackScreen({super.key, required this.eventId});
+  final String? eventId; // nullable now
+  final String token;
+  final String userId;
+
+  const FeedbackScreen({
+    super.key,
+    required this.token,
+    required this.userId,
+    this.eventId, // optional
+  });
 
   @override
   _FeedbackScreenState createState() => _FeedbackScreenState();
@@ -15,6 +23,38 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   double rating = 3.0;
   bool isSubmitting = false;
 
+  String eventTitle = "General Feedback";
+  String? eventBanner;
+  String? eventDate;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.eventId != null) fetchEvent();
+  }
+
+  Future<void> fetchEvent() async {
+    try {
+      final response = await http.get(
+        Uri.parse("http://localhost:5000/api/events/${widget.eventId}"),
+        headers: {
+          "Authorization": "Bearer ${widget.token}",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          eventTitle = data['title'] ?? "Event Feedback";
+          eventBanner = data['bannerImage'];
+          eventDate = data['date'];
+        });
+      }
+    } catch (e) {
+      print("Error fetching event: $e");
+    }
+  }
+
   Future<void> submitFeedback() async {
     if (_feedbackController.text.isEmpty) return;
 
@@ -23,9 +63,13 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     try {
       final response = await http.post(
         Uri.parse("http://localhost:5000/api/events/feedback"),
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer ${widget.token}",
+        },
         body: jsonEncode({
-          "eventId": widget.eventId,
+          "eventId": widget.eventId ?? "general",
+          "userId": widget.userId,
           "rating": rating,
           "comment": _feedbackController.text,
         }),
@@ -55,11 +99,28 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         title: const Text("Submit Feedback"),
         backgroundColor: Colors.deepPurple,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            const Text("Rate this event:", style: TextStyle(fontSize: 18)),
+            if (eventBanner != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(eventBanner!, width: double.infinity, height: 180, fit: BoxFit.cover),
+              ),
+            const SizedBox(height: 12),
+            Text(
+              eventTitle,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            if (eventDate != null)
+              Text(
+                "Date: $eventDate",
+                style: const TextStyle(color: Colors.grey),
+              ),
+            const SizedBox(height: 20),
+            Text("Rate \"$eventTitle\":", style: const TextStyle(fontSize: 18)),
             Slider(
               value: rating,
               min: 1,

@@ -1,14 +1,19 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'pdf_viewer_screen.dart';
+import '../student/upgrade_form_screen.dart';
+import 'feedback_screen.dart';
 
 class EventsScreen extends StatefulWidget {
-  const EventsScreen({super.key});
+  final String? token;
+  final String? userId;
+
+  const EventsScreen({super.key, this.token, this.userId});
 
   @override
-  _EventsScreenState createState() => _EventsScreenState();
+  State<EventsScreen> createState() => _EventsScreenState();
 }
 
 class _EventsScreenState extends State<EventsScreen> {
@@ -17,26 +22,26 @@ class _EventsScreenState extends State<EventsScreen> {
   bool isLoading = true;
   String? token;
   String? userId;
-
-  final String backendUrl = "http://localhost:5000"; // backend URL
+  String? role;
+  final backendUrl = "http://localhost:5000";
 
   @override
   void initState() {
     super.initState();
-    loadTokenAndFetchEvents();
+    token = widget.token;
+    userId = widget.userId;
+    loadUserRoleAndEvents();
   }
 
-  Future<void> loadTokenAndFetchEvents() async {
+  Future<void> loadUserRoleAndEvents() async {
     final prefs = await SharedPreferences.getInstance();
-    token = prefs.getString('token');
-    userId = prefs.getString('userId');
+    role = prefs.getString('role');
     await fetchEvents();
   }
 
   Future<void> fetchEvents() async {
     try {
       final response = await http.get(Uri.parse("$backendUrl/api/events"));
-
       if (response.statusCode == 200) {
         setState(() {
           events = json.decode(response.body);
@@ -47,11 +52,13 @@ class _EventsScreenState extends State<EventsScreen> {
       }
     } catch (e) {
       setState(() => isLoading = false);
-      print("❌ Error fetching events: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Error fetching events: $e")),
+      );
     }
   }
 
-  Future<void> registerForEvent(String eventId) async {
+  Future<void> registerForEvent(Map<String, dynamic> event) async {
     if (token == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("You must be logged in to register.")),
@@ -59,25 +66,65 @@ class _EventsScreenState extends State<EventsScreen> {
       return;
     }
 
+    if (role != 'participant') {
+      final upgraded = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const UpgradeToParticipantScreen()),
+      );
+
+      if (upgraded == true) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('role', 'participant');
+        role = 'participant';
+        await registerForEvent(event);
+      }
+      return;
+    }
+
+    final alreadyRegistered = (event['registeredUsers'] as List).contains(
+        userId);
+
+    if (alreadyRegistered && event['certificate'] != null) {
+      final fileUrl = event['certificate']['fileUrl'];
+      if (fileUrl != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => PDFViewerScreen(fileUrl: fileUrl)),
+        );
+        return;
+      }
+    }
+
     try {
       final response = await http.post(
-        Uri.parse("$backendUrl/api/events/$eventId/register"),
+        Uri.parse("$backendUrl/api/events/${event['_id']}/register"),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+      final data = json.decode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Registered successfully!")),
+          SnackBar(
+              content: Text(data['message'] ?? "Registered successfully!")),
         );
 
-        // Update local events list to show user is registered
+        if (data['certificate'] != null &&
+            data['certificate']['fileUrl'] != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) =>
+                PDFViewerScreen(fileUrl: data['certificate']['fileUrl'])),
+          );
+        }
         await fetchEvents();
       } else {
-        throw Exception("Failed to register");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? "Failed to register")),
+        );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -87,31 +134,13 @@ class _EventsScreenState extends State<EventsScreen> {
   }
 
   void showEventDetails(Map<String, dynamic> event) {
-    setState(() {
-      selectedEvent = event;
-    });
+    setState(() => selectedEvent = event);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text(
-          selectedEvent == null ? "Events" : selectedEvent!['title'],
-          style: GoogleFonts.robotoCondensed(
-              fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 2,
-        centerTitle: true,
-        leading: selectedEvent != null
-            ? IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => setState(() => selectedEvent = null),
-        )
-            : null,
-      ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.black))
           : selectedEvent == null
@@ -121,25 +150,23 @@ class _EventsScreenState extends State<EventsScreen> {
   }
 
   Widget buildEventList() {
-    if (events.isEmpty) {
-      return const Center(child: Text("No events available"));
-    }
+    if (events.isEmpty) return const Center(child: Text("No events available"));
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: events.length,
       itemBuilder: (context, index) {
         final event = events[index];
-        final alreadyRegistered =
-        (event['registeredUsers'] as List).contains(userId);
+        final alreadyRegistered = (event['registeredUsers'] as List).contains(
+            userId);
 
         return GestureDetector(
           onTap: () => showEventDetails(event),
           child: Card(
             color: Colors.grey[200],
             elevation: 5,
-            shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15)),
             margin: const EdgeInsets.only(bottom: 16),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -150,25 +177,23 @@ class _EventsScreenState extends State<EventsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(event['title'] ?? "Untitled Event",
-                            style: GoogleFonts.robotoCondensed(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 22,
-                                color: Colors.black)),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 20)),
                         const SizedBox(height: 8),
                         Text(event['description'] ?? "",
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                fontSize: 14, color: Colors.grey)),
+                            style: const TextStyle(color: Colors.grey)),
                       ],
                     ),
                   ),
                   if (alreadyRegistered)
-                    const Icon(Icons.workspace_premium,
-                        color: Colors.deepPurple, size: 28),
+                    const Icon(
+                        Icons.workspace_premium, color: Colors.deepPurple,
+                        size: 28),
                   const SizedBox(width: 8),
-                  const Icon(Icons.arrow_forward_ios,
-                      color: Colors.black, size: 18),
+                  const Icon(
+                      Icons.arrow_forward_ios, color: Colors.black, size: 18),
                 ],
               ),
             ),
@@ -179,7 +204,8 @@ class _EventsScreenState extends State<EventsScreen> {
   }
 
   Widget buildEventDetails(Map<String, dynamic> event) {
-    final alreadyRegistered = (event['registeredUsers'] as List).contains(userId);
+    final alreadyRegistered = (event['registeredUsers'] as List).contains(
+        userId);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -187,30 +213,48 @@ class _EventsScreenState extends State<EventsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(event['title'] ?? "Untitled Event",
-              style: GoogleFonts.robotoCondensed(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black)),
+              style: const TextStyle(
+                  fontSize: 28, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           Text(event['description'] ?? "",
-              style: GoogleFonts.robotoCondensed(
-                  fontSize: 16, color: Colors.grey[600])),
+              style: const TextStyle(fontSize: 16, color: Colors.grey)),
           const SizedBox(height: 20),
-          Text("📅 Date: ${event['date'] ?? 'N/A'}",
-              style: const TextStyle(fontSize: 14, color: Colors.black)),
-          Text("📍 Location: ${event['location'] ?? 'N/A'}",
-              style: const TextStyle(fontSize: 14, color: Colors.black)),
+          Text("📅 Date: ${event['date'] ?? 'N/A'}"),
+          Text("📍 Location: ${event['location'] ?? 'N/A'}"),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: alreadyRegistered
-                ? null
-                : () => registerForEvent(event['_id']),
-            style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepPurple,
+            onPressed: () => registerForEvent(event),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple),
+            child: Text(alreadyRegistered ? "View Certificate" : "Register"),
+          ),
+          const SizedBox(height: 12),
+          // NEW Feedback Button
+          if (alreadyRegistered)
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        FeedbackScreen(
+                          token: token ?? '',
+                          userId: userId ?? '',
+                          eventId: event['_id'],
+                        ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.feedback),
+              label: const Text("Leave Feedback"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black87,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12))),
-            child: Text(alreadyRegistered ? "Registered" : "Register"),
-          )
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
         ],
       ),
     );
