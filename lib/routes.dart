@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 // Screens
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
-import 'screens/common/splash_screen.dart';
-import 'screens/common/profile_screen.dart';
 import 'screens/auth/auth_check.dart';
 
 // Role Dashboards
@@ -14,7 +12,7 @@ import 'screens/admin/admin_dashboard.dart';
 
 // Student Screens
 import 'screens/student/event_details_screen.dart';
-import 'screens/student/bookmarked_events_screen.dart';
+// import 'screens/student/bookmarked_events_screen.dart';
 
 // Organizer Screens
 import 'screens/organizer/my_events_screen.dart';
@@ -53,8 +51,6 @@ class Routes {
         return MaterialPageRoute(builder: (_) => LoginScreen());
       case register:
         return MaterialPageRoute(builder: (_) => SignupScreen());
-      case profile:
-        return MaterialPageRoute(builder: (_) => ProfileScreen());
 
     // Dashboards
       case studentDashboard:
@@ -78,8 +74,8 @@ class Routes {
           builder: (_) => EventDetailsScreen(eventId: args['eventId']),
         );
 
-      case bookmarkedEvents:
-        return MaterialPageRoute(builder: (_) => const BookmarkedEventsScreen());
+      // case bookmarkedEvents:
+      //   return MaterialPageRoute(builder: (_) => const BookmarkedEventsScreen());
 
     // Organizer Routes
       case myEvents:

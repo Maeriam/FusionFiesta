@@ -78,15 +78,16 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    const deepPurple = Color(0xFF3E1E68);
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Event Details", style: GoogleFonts.robotoCondensed()),
-        backgroundColor: Colors.deepPurple,
-      ),
+      backgroundColor: const Color(0xFF1E1E1E),
+
       body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.black))
+          ? const Center(child: CircularProgressIndicator(color: Colors.amber))
           : event == null
-          ? const Center(child: Text("Event not found"))
+          ? const Center(
+          child: Text("Event not found", style: TextStyle(color: Colors.white)))
           : SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -103,26 +104,32 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 ),
               ),
             const SizedBox(height: 20),
-            Text(event!['title'] ?? "",
-                style: GoogleFonts.robotoCondensed(
-                    fontSize: 26, fontWeight: FontWeight.bold)),
+            Text(
+              event!['title'] ?? "",
+              style: GoogleFonts.robotoCondensed(
+                  fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
             const SizedBox(height: 10),
-            Text(event!['description'] ?? "",
-                style: GoogleFonts.robotoCondensed(
-                    fontSize: 16, color: Colors.grey[700])),
+            Text(
+              event!['description'] ?? "",
+              style: GoogleFonts.robotoCondensed(
+                  fontSize: 16, color: Colors.grey[400]),
+            ),
             const SizedBox(height: 15),
             Row(
               children: [
-                const Icon(Icons.calendar_today, size: 18),
+                const Icon(Icons.calendar_today, size: 18, color: Colors.white70),
                 const SizedBox(width: 8),
-                Text(event!['date'] ?? "No date"),
+                Text(event!['date'] ?? "No date",
+                    style: const TextStyle(color: Colors.white70)),
               ],
             ),
             Row(
               children: [
-                const Icon(Icons.place, size: 18),
+                const Icon(Icons.place, size: 18, color: Colors.white70),
                 const SizedBox(width: 8),
-                Text(event!['venue'] ?? "No venue"),
+                Text(event!['venue'] ?? "No venue",
+                    style: const TextStyle(color: Colors.white70)),
               ],
             ),
             const SizedBox(height: 25),
@@ -131,7 +138,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               icon: const Icon(Icons.event_available),
               label: const Text("Register"),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepPurple,
+                backgroundColor: deepPurple,
                 foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(

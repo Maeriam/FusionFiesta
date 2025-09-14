@@ -1,11 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'providers/event_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/theme_provider.dart';
+import 'providers/user_provider.dart';
 import 'routes.dart';
-import 'screens/auth/auth_check.dart';
 
 void main() {
-  runApp(const FusionFiestaApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => EventProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeNotifier()),
+      ],
+      child: const FusionFiestaApp(),
+    ),
+  );
 }
 
 class FusionFiestaApp extends StatelessWidget {
@@ -13,15 +25,16 @@ class FusionFiestaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AuthProvider(),
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Fusion Fiesta',
-        theme: ThemeData.light(),
-        initialRoute: Routes.authCheck,
-        onGenerateRoute: Routes.generateRoute,
-      ),
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Fusion Fiesta',
+      themeMode: themeNotifier.currentMode,
+      theme: themeNotifier.lightTheme,
+      darkTheme: themeNotifier.darkTheme,
+      initialRoute: Routes.authCheck,
+      onGenerateRoute: Routes.generateRoute,
     );
   }
 }

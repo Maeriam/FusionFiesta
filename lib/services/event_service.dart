@@ -28,7 +28,7 @@ class EventService {
     return Event.fromJson(data);
   }
 
-  /// Register current user for an event
+
   /// Register current user for an event and receive certificate
   static Future<Map<String, dynamic>> registerForEvent(String eventId, String token) async {
     final data = await ApiService.post("events/$eventId/register", {}, token: token);
@@ -77,6 +77,24 @@ class EventService {
       token: token,
     );
     return data['message'] ?? "Feedback submitted";
+  }
+
+  static Future<Event> updateEvent(String id, Map<String, dynamic> body, String token) async {
+    final data = await ApiService.put("events/$id", body, token: token);
+    return Event.fromJson(data);
+    fetchEvents();
+  }
+
+  /// Delete an event (admin only)
+  static Future<String> deleteEvent(String id, String token) async {
+    final data = await ApiService.delete("events/$id", token: token);
+    return data['message'];
+  }
+
+  /// Fetch participants of an event
+  static Future<List<dynamic>> getEventParticipants(String id, String token) async {
+    final data = await ApiService.get("events/$id/participants", token: token);
+    return data as List;
   }
 
 }

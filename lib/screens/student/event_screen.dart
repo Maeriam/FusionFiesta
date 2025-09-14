@@ -81,8 +81,7 @@ class _EventsScreenState extends State<EventsScreen> {
       return;
     }
 
-    final alreadyRegistered = (event['registeredUsers'] as List).contains(
-        userId);
+    final alreadyRegistered = (event['registeredUsers'] as List).contains(userId);
 
     if (alreadyRegistered && event['certificate'] != null) {
       final fileUrl = event['certificate']['fileUrl'];
@@ -108,12 +107,10 @@ class _EventsScreenState extends State<EventsScreen> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(data['message'] ?? "Registered successfully!")),
+          SnackBar(content: Text(data['message'] ?? "Registered successfully!")),
         );
 
-        if (data['certificate'] != null &&
-            data['certificate']['fileUrl'] != null) {
+        if (data['certificate'] != null && data['certificate']['fileUrl'] != null) {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) =>
@@ -139,34 +136,40 @@ class _EventsScreenState extends State<EventsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    const deepPurple = Color(0xFF3E1E68);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF1E1E1E),
+
+
       body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.black))
+          ? const Center(child: CircularProgressIndicator(color: Colors.amber))
           : selectedEvent == null
-          ? buildEventList()
-          : buildEventDetails(selectedEvent!),
+          ? buildEventList(deepPurple)
+          : buildEventDetails(selectedEvent!, deepPurple),
     );
+
   }
 
-  Widget buildEventList() {
-    if (events.isEmpty) return const Center(child: Text("No events available"));
+  Widget buildEventList(Color deepPurple) {
+    if (events.isEmpty) {
+      return const Center(
+          child: Text("No events available", style: TextStyle(color: Colors.white)));
+    }
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: events.length,
       itemBuilder: (context, index) {
         final event = events[index];
-        final alreadyRegistered = (event['registeredUsers'] as List).contains(
-            userId);
+        final alreadyRegistered = (event['registeredUsers'] as List).contains(userId);
 
         return GestureDetector(
           onTap: () => showEventDetails(event),
           child: Card(
-            color: Colors.grey[200],
-            elevation: 5,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15)),
+            color: const Color(0xFF262626),
+            elevation: 4,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
             margin: const EdgeInsets.only(bottom: 16),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -176,24 +179,27 @@ class _EventsScreenState extends State<EventsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(event['title'] ?? "Untitled Event",
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 20)),
+                        Text(
+                          event['title'] ?? "Untitled Event",
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              color: Colors.white),
+                        ),
                         const SizedBox(height: 8),
-                        Text(event['description'] ?? "",
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Colors.grey)),
+                        Text(
+                          event['description'] ?? "",
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
                       ],
                     ),
                   ),
                   if (alreadyRegistered)
-                    const Icon(
-                        Icons.workspace_premium, color: Colors.deepPurple,
-                        size: 28),
+                    Icon(Icons.workspace_premium, color: deepPurple, size: 28),
                   const SizedBox(width: 8),
-                  const Icon(
-                      Icons.arrow_forward_ios, color: Colors.black, size: 18),
+                  const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 18),
                 ],
               ),
             ),
@@ -203,9 +209,8 @@ class _EventsScreenState extends State<EventsScreen> {
     );
   }
 
-  Widget buildEventDetails(Map<String, dynamic> event) {
-    final alreadyRegistered = (event['registeredUsers'] as List).contains(
-        userId);
+  Widget buildEventDetails(Map<String, dynamic> event, Color deepPurple) {
+    final alreadyRegistered = (event['registeredUsers'] as List).contains(userId);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -214,33 +219,40 @@ class _EventsScreenState extends State<EventsScreen> {
         children: [
           Text(event['title'] ?? "Untitled Event",
               style: const TextStyle(
-                  fontSize: 28, fontWeight: FontWeight.bold)),
+                  fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
           const SizedBox(height: 12),
           Text(event['description'] ?? "",
               style: const TextStyle(fontSize: 16, color: Colors.grey)),
           const SizedBox(height: 20),
-          Text("📅 Date: ${event['date'] ?? 'N/A'}"),
-          Text("📍 Location: ${event['location'] ?? 'N/A'}"),
+          Text("📅 Date: ${event['date'] ?? 'N/A'}", style: const TextStyle(color: Colors.white70)),
+          Text("📍 Location: ${event['location'] ?? 'N/A'}", style: const TextStyle(color: Colors.white70)),
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () => registerForEvent(event),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple),
-            child: Text(alreadyRegistered ? "View Certificate" : "Register"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: deepPurple,
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              alreadyRegistered ? "View Certificate" : "Register",
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ),
           const SizedBox(height: 12),
-          // NEW Feedback Button
           if (alreadyRegistered)
             ElevatedButton.icon(
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        FeedbackScreen(
-                          token: token ?? '',
-                          userId: userId ?? '',
-                          eventId: event['_id'],
-                        ),
+                    builder: (_) => FeedbackScreen(
+                      token: token ?? '',
+                      userId: userId ?? '',
+                      eventId: event['_id'],
+                    ),
                   ),
                 );
               },

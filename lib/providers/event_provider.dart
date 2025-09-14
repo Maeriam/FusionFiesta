@@ -44,4 +44,32 @@ class EventProvider with ChangeNotifier {
       return false;
     }
   }
+
+  Future<bool> deleteEvent(String id, String token) async {
+    try {
+      await EventService.deleteEvent(id, token);
+      _events.removeWhere((e) => e.id == id);
+      notifyListeners();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> updateEvent(String id, Map<String, dynamic> body, String token) async {
+    try {
+      final updatedEvent = await EventService.updateEvent(id, body, token);
+      final index = _events.indexWhere((e) => e.id == id);
+      if (index != -1) _events[index] = updatedEvent;
+      notifyListeners();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+
+  Future<List<dynamic>> getParticipants(String id, String token) async {
+    return await EventService.getEventParticipants(id, token);
+  }
 }

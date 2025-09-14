@@ -1,5 +1,5 @@
 import '../services/api_service.dart';
-import '../models/user_model.dart'; // make sure you have a User model with fromJson
+import '../models/user_model.dart';
 
 class AuthService {
   /// Register a new user

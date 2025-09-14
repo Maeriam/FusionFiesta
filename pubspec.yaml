@@ -39,6 +39,7 @@ dependencies:
   url_launcher: ^6.1.10
   syncfusion_flutter_pdfviewer: ^31.1.19
   intl: ^0.18.1
+  animate_do: ^2.0.1
 
 
   # The following adds the Cupertino Icons font to your application.

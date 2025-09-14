@@ -25,15 +25,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   }
 
   Future<void> fetchEventDetails() async {
-    if (!mounted) return;
     setState(() => isLoading = true);
-
     try {
       final response = await http.get(
         Uri.parse("http://localhost:5000/api/events/${widget.eventId}"),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
-
       if (!mounted) return;
       if (response.statusCode == 200) {
         setState(() {
@@ -46,9 +43,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ Error: $e")),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("❌ Error: $e")));
     }
   }
 
@@ -74,9 +70,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ Error: $e")),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("❌ Error: $e")));
     }
   }
 
@@ -97,21 +92,19 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       if (!mounted) return;
       if (response.statusCode == 200 || response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Co-organizer added")),
+          const SnackBar(content: Text("✅ Co-organizer added")),
         );
         _coOrganizerController.clear();
         await fetchEventDetails();
       } else {
         final data = json.decode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Failed to add co-organizer")),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(data['message'] ?? "Failed to add co-organizer")));
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ Error: $e")),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("❌ Error: $e")));
     }
   }
 
@@ -125,20 +118,18 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       if (!mounted) return;
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Co-organizer removed")),
+          const SnackBar(content: Text("🗑️ Co-organizer removed")),
         );
         await fetchEventDetails();
       } else {
         final data = json.decode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Failed to remove")),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(data['message'] ?? "Failed to remove")));
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ Error: $e")),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("❌ Error: $e")));
     }
   }
 
@@ -149,113 +140,181 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         title: const Text("Add Co-Organizer"),
         content: TextField(
           controller: _coOrganizerController,
-          decoration: const InputDecoration(labelText: "Email"),
+          decoration: const InputDecoration(
+            labelText: "Email",
+            prefixIcon: Icon(Icons.email),
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton.icon(
             onPressed: () {
               Navigator.pop(context);
               addCoOrganizer();
             },
-            child: const Text("Add"),
+            icon: const Icon(Icons.add),
+            label: const Text("Add"),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple),
           ),
         ],
       ),
     );
   }
 
+  Widget buildSectionCard({required Widget child}) {
+    return Card(
+      color: Colors.grey.shade900,
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Padding(padding: const EdgeInsets.all(16), child: child),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF1E1E1E),
       appBar: AppBar(
         title: const Text("Event Details"),
         backgroundColor: Colors.deepPurple,
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: fetchEventDetails)
+        ],
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Colors.deepPurple))
           : event == null
-          ? const Center(child: Text("Event not found"))
+          ? const Center(child: Text("Event not found", style: TextStyle(color: Colors.white)))
           : SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(event!['title'] ?? "Untitled Event",
-                style: const TextStyle(
-                    fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Text(event!['description'] ?? "",
-                style: const TextStyle(fontSize: 16)),
-            const SizedBox(height: 20),
-            Text(
-              "Date: ${DateFormat.yMMMMd().add_jm().format(DateTime.parse(event!['date']))}",
-            ),
-            Text("Venue: ${event!['venue'] ?? 'N/A'}"),
-            Text("Status: ${event!['status']}"),
-            const SizedBox(height: 20),
+            // --- Event Title ---
             Row(
               children: [
-                ElevatedButton(
-                  onPressed: () => updateStatus("Live"),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green),
-                  child: const Text("Mark Live"),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: () => updateStatus("Completed"),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange),
-                  child: const Text("Mark Completed"),
+                const Icon(Icons.event, size: 28, color: Colors.deepPurple),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    event!['title'] ?? "Untitled Event",
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            Text(
+              event!['description'] ?? "",
+              style: const TextStyle(fontSize: 16, color: Colors.white70),
+            ),
             const SizedBox(height: 20),
-            const Text("Participants:",
-                style: TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.bold)),
+
+            // --- Event Info ---
+            buildSectionCard(
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.calendar_today, color: Colors.deepPurple),
+                    title: Text(
+                      DateFormat.yMMMMd().add_jm().format(DateTime.parse(event!['date'])),
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.place, color: Colors.deepPurple),
+                    title: Text("Venue: ${event!['venue'] ?? 'N/A'}",
+                        style: const TextStyle(color: Colors.white)),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.flag, color: Colors.deepPurple),
+                    title: Text("Status: ${event!['status']}",
+                        style: const TextStyle(color: Colors.white)),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // --- Status Buttons ---
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => updateStatus("Live"),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.symmetric(vertical: 14)),
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text("Mark Live"),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => updateStatus("Completed"),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        padding: const EdgeInsets.symmetric(vertical: 14)),
+                    icon: const Icon(Icons.check_circle),
+                    label: const Text("Mark Completed"),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // --- Participants ---
+            Text("Participants", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 8),
             if ((event!['registeredUsers'] ?? []).isEmpty)
-              const Text("No participants yet"),
-            ...List.generate(event!['registeredUsers']?.length ?? 0,
-                    (index) {
-                  final participant = event!['registeredUsers'][index];
-                  return ListTile(
-                    title: Text(participant['name'] ?? "Unnamed"),
-                    subtitle: Text(participant['email'] ?? ""),
-                  );
-                }),
+              const Text("No participants yet", style: TextStyle(color: Colors.white54)),
+            ...List.generate(event!['registeredUsers']?.length ?? 0, (index) {
+              final participant = event!['registeredUsers'][index];
+              return buildSectionCard(
+                child: ListTile(
+                  leading: const Icon(Icons.person, color: Colors.deepPurple),
+                  title: Text(participant['name'] ?? "Unnamed", style: const TextStyle(color: Colors.white)),
+                  subtitle: Text(participant['email'] ?? "", style: const TextStyle(color: Colors.white70)),
+                ),
+              );
+            }),
+
+            const SizedBox(height: 20),
+
+            // --- Co-Organizers ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Co-Organizers:",
-                    style: TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
+                Text("Co-Organizers", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                 IconButton(
-                  icon:
-                  const Icon(Icons.add, color: Colors.deepPurple),
-                  onPressed: showAddCoOrganizerDialog,
-                )
+                    icon: const Icon(Icons.add_circle, color: Colors.deepPurple),
+                    onPressed: showAddCoOrganizerDialog),
               ],
             ),
+            const SizedBox(height: 8),
             if ((event!['coOrganizers'] ?? []).isEmpty)
-              const Text("No co-organizers yet"),
-            ...List.generate(event!['coOrganizers']?.length ?? 0,
-                    (index) {
-                  final coOrg = event!['coOrganizers'][index];
-                  return ListTile(
-                    title: Text(coOrg['name'] ?? "Unnamed"),
-                    subtitle: Text(coOrg['email'] ?? ""),
-                    trailing: IconButton(
-                      icon:
-                      const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => removeCoOrganizer(coOrg['_id']),
-                    ),
-                  );
-                }),
+              const Text("No co-organizers yet", style: TextStyle(color: Colors.white54)),
+            ...List.generate(event!['coOrganizers']?.length ?? 0, (index) {
+              final coOrg = event!['coOrganizers'][index];
+              return buildSectionCard(
+                child: ListTile(
+                  leading: const Icon(Icons.person_outline, color: Colors.deepPurple),
+                  title: Text(coOrg['name'] ?? "Unnamed", style: const TextStyle(color: Colors.white)),
+                  subtitle: Text(coOrg['email'] ?? "", style: const TextStyle(color: Colors.white70)),
+                  trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => removeCoOrganizer(coOrg['_id'])),
+                ),
+              );
+            }),
           ],
         ),
       ),

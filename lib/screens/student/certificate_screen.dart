@@ -61,18 +61,26 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url));
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Could not open file")));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Could not open file")));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    const deepPurple = Color(0xFF3E1E68);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF1E1E1E),
+
+
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Colors.amber))
           : certificates.isEmpty
-          ? const Center(child: Text("No certificates available"))
+          ? const Center(
+        child: Text("No certificates available",
+            style: TextStyle(color: Colors.white)),
+      )
           : ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: certificates.length,
@@ -82,24 +90,36 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
           final fileUrl = cert['fileUrl'];
 
           return Card(
-            color: Colors.grey[100],
+            color: const Color(0xFF2A2A2A),
             elevation: 4,
             margin: const EdgeInsets.only(bottom: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
             child: ListTile(
               onTap: () {
                 if (fileUrl != null) {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => PDFViewerScreen(fileUrl: fileUrl)),
+                    MaterialPageRoute(
+                        builder: (_) => PDFViewerScreen(fileUrl: fileUrl)),
                   );
                 }
               },
-              leading: const Icon(Icons.workspace_premium, color: Colors.deepPurple, size: 32),
-              title: Text(event['title'] ?? "Certificate", style: GoogleFonts.robotoCondensed(fontSize: 18, fontWeight: FontWeight.bold)),
-              subtitle: Text("Issued: ${event['date']?.substring(0, 10) ?? 'N/A'}", style: const TextStyle(fontSize: 14, color: Colors.grey)),
+              leading: const Icon(Icons.workspace_premium,
+                  color: Colors.amber, size: 32),
+              title: Text(
+                event['title'] ?? "Certificate",
+                style: GoogleFonts.robotoCondensed(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
+              ),
+              subtitle: Text(
+                "Issued: ${event['date']?.substring(0, 10) ?? 'N/A'}",
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
+              ),
               trailing: IconButton(
-                icon: const Icon(Icons.download, color: Colors.black),
+                icon: const Icon(Icons.download, color: Colors.white),
                 onPressed: () {
                   if (fileUrl != null) downloadFile(fileUrl);
                 },

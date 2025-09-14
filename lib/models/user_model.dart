@@ -7,7 +7,7 @@ class User {
   final String? enrolmentNumber;
   final String? department;
   final String? collegeIdProof;
-  final List<String> bookmarks; // ✅ added field
+  final List<String> bookmarks;
 
   User({
     required this.id,
@@ -18,7 +18,7 @@ class User {
     this.enrolmentNumber,
     this.department,
     this.collegeIdProof,
-    this.bookmarks = const [], // ✅ default empty list
+    this.bookmarks = const [],
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -31,7 +31,7 @@ class User {
       enrolmentNumber: json['enrolmentNumber'],
       department: json['department'],
       collegeIdProof: json['collegeIdProof'],
-      bookmarks: List<String>.from(json['bookmarks'] ?? []), // ✅ parse safely
+      bookmarks: List<String>.from(json['bookmarks'] ?? []),
     );
   }
 }

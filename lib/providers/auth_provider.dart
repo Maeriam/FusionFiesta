@@ -8,7 +8,7 @@ class AuthProvider with ChangeNotifier {
   User? _user;
   String? _token;
   bool _isLoading = false;
-  List<String> _bookmarks = []; // ✅ bookmarked event IDs
+  List<String> _bookmarks = [];
 
   User? get user => _user;
   String? get token => _token;
@@ -25,7 +25,7 @@ class AuthProvider with ChangeNotifier {
       final data = await AuthService.login(email, password);
       _token = data['token'];
       _user = User.fromJson(data['user']);
-      _bookmarks = List<String>.from(data['user']['bookmarks'] ?? []); // ✅ load from backend
+      _bookmarks = List<String>.from(data['user']['bookmarks'] ?? []);
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('ff_token', _token!);
@@ -72,7 +72,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  /// ✅ Toggle bookmark
+
   Future<void> toggleBookmark(String eventId) async {
     if (_token == null) return;
     if (_bookmarks.contains(eventId)) {

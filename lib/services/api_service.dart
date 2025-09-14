@@ -1,11 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-/// IMPORTANT:
-/// - Android emulator: use 10.0.2.2
-/// - iOS simulator / web: use localhost
-/// - Physical device: use your PC's LAN IP (e.g. http://192.168.x.x:5000)
-const String baseUrl = 'http://10.0.2.2:5000/api';
+
+const String baseUrl = 'http://localhost:5000/api';
 
 class ApiService {
   // --- GET ---

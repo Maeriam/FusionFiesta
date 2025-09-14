@@ -23,7 +23,7 @@ class NotificationProvider with ChangeNotifier {
             userId: n.userId,
             type: n.type,
             message: n.message,
-            read: true, // ✅ updated to match your model
+            read: true,
             relatedEventId: n.relatedEventId,
             createdAt: n.createdAt,
           );
